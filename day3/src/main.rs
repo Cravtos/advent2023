@@ -1,9 +1,9 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 
-fn get_number(s: &mut str, idx: usize) -> u32 {
+fn cut_number(s: &mut str, idx: usize) -> Option<u32> {
     if s.chars().nth(idx).is_some_and(|ch| !ch.is_digit(10)) {
-        return 0;
+        return None;
     }
 
     let mut start = idx;
@@ -26,9 +26,17 @@ fn get_number(s: &mut str, idx: usize) -> u32 {
     }
 
     match number {
-        Ok(n) => n,
-        Err(_) => 0,
+        Ok(n) => Some(n),
+        Err(_) => None,
     }
+}
+
+fn append_to_vec_if_some(vec: &mut Vec<u32>, number: Option<u32>) -> bool {
+    if let Some(n) = number {
+        vec.push(n);
+        return true;
+    }
+    return false;
 }
 
 fn main() {
@@ -45,42 +53,51 @@ fn main() {
     // handle first line
     let idx_iter: Vec<usize> = buf[0]
         .char_indices()
-        .filter(|(_, ch)| *ch != '.' && !ch.is_digit(10))
+        .filter(|(_, ch)| *ch == '*')
         .map(|(idx, _)| idx)
         .collect();
     for idx in idx_iter {
-        sum += get_number(&mut buf[0], idx - 1) + get_number(&mut buf[0], idx + 1);
-        let mid = get_number(&mut buf[1], idx);
-        sum += if mid == 0 {
-            get_number(&mut buf[1], idx - 1) + get_number(&mut buf[1], idx + 1)
-        } else {
-            mid
-        };
+        let mut numbers: Vec<u32> = Vec::new();
+
+        append_to_vec_if_some(&mut numbers, cut_number(&mut buf[0], idx - 1));
+        append_to_vec_if_some(&mut numbers, cut_number(&mut buf[0], idx + 1));
+
+        if !append_to_vec_if_some(&mut numbers, cut_number(&mut buf[1], idx)) {
+            append_to_vec_if_some(&mut numbers, cut_number(&mut buf[1], idx-1));
+            append_to_vec_if_some(&mut numbers, cut_number(&mut buf[1], idx+1));
+        }
+
+        if numbers.len() == 2 {
+            sum += numbers[0] * numbers[1];
+        }
     }
 
     // handle the middle
     loop {
         let idx_iter: Vec<usize> = buf[1]
             .char_indices()
-            .filter(|(_, ch)| *ch != '.' && !ch.is_digit(10))
+            .filter(|(_, ch)| *ch == '*')
             .map(|(idx, _)| idx)
             .collect();
         for idx in idx_iter {
-            sum += get_number(&mut buf[1], idx - 1) + get_number(&mut buf[1], idx + 1);
+            let mut numbers: Vec<u32> = Vec::new();
 
-            let mid = get_number(&mut buf[0], idx);
-            sum += if mid == 0 {
-                get_number(&mut buf[0], idx - 1) + get_number(&mut buf[0], idx + 1)
-            } else {
-                mid
-            };
+            append_to_vec_if_some(&mut numbers, cut_number(&mut buf[1], idx - 1));
+            append_to_vec_if_some(&mut numbers, cut_number(&mut buf[1], idx + 1));
 
-            let mid = get_number(&mut buf[2], idx);
-            sum += if mid == 0 {
-                get_number(&mut buf[2], idx - 1) + get_number(&mut buf[2], idx + 1)
-            } else {
-                mid
-            };
+            if !append_to_vec_if_some(&mut numbers, cut_number(&mut buf[0], idx)) {
+                append_to_vec_if_some(&mut numbers, cut_number(&mut buf[0], idx-1));
+                append_to_vec_if_some(&mut numbers, cut_number(&mut buf[0], idx+1));
+            }
+
+            if !append_to_vec_if_some(&mut numbers, cut_number(&mut buf[2], idx)) {
+                append_to_vec_if_some(&mut numbers, cut_number(&mut buf[2], idx-1));
+                append_to_vec_if_some(&mut numbers, cut_number(&mut buf[2], idx+1));
+            }
+
+            if numbers.len() == 2 {
+                sum += numbers[0] * numbers[1];
+            }
         }
 
         buf.swap(0, 1);
@@ -94,20 +111,25 @@ fn main() {
     }
 
     // handle last line
-    let idx_iter: Vec<usize> = buf[1]
+    let idx_iter: Vec<usize> = buf[2]
         .char_indices()
-        .filter(|(_, ch)| *ch != '.' && !ch.is_digit(10))
+        .filter(|(_, ch)| *ch == '*')
         .map(|(idx, _)| idx)
         .collect();
     for idx in idx_iter {
-        sum += get_number(&mut buf[2], idx - 1) + get_number(&mut buf[2], idx + 1);
+        let mut numbers: Vec<u32> = Vec::new();
 
-        let mid = get_number(&mut buf[2], idx);
-        sum += if mid == 0 {
-            get_number(&mut buf[1], idx - 1) + get_number(&mut buf[1], idx + 1)
-        } else {
-            mid
-        };
+        append_to_vec_if_some(&mut numbers, cut_number(&mut buf[2], idx - 1));
+        append_to_vec_if_some(&mut numbers, cut_number(&mut buf[2], idx + 1));
+
+        if !append_to_vec_if_some(&mut numbers, cut_number(&mut buf[1], idx)) {
+            append_to_vec_if_some(&mut numbers, cut_number(&mut buf[1], idx-1));
+            append_to_vec_if_some(&mut numbers, cut_number(&mut buf[1], idx+1));
+        }
+
+        if numbers.len() == 2 {
+            sum += numbers[0] * numbers[1];
+        }
     }
 
     println!("{sum}");
