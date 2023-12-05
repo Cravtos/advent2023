@@ -32,18 +32,19 @@ fn dest(from: &[u64; 2], map: &Map) -> Vec<[u64; 2]> {
         let dst = [range[0], range[0] + range[2] - 1];
         let src = [range[1], range[1] + range[2] - 1];
 
-        if let Some(intr_src) = intersect(from, &src) {
-            let intr_dst = [intr_src[0] - src[0] + dst[0], intr_src[1] - src[0] + dst[0]];
+        if let Some(intr) = intersect(from, &src) {
+            let intr_dst = [intr[0] - src[0] + dst[0], intr[1] - src[0] + dst[0]];
             destinations.push(intr_dst);
         }
 
+        // if range does not intersect, keep it as is
         let mut new_untouched: Vec<[u64; 2]> = Vec::new();
-        for unt_src in untouched.iter() {
-            if let Some(intr) = intersect(unt_src, &src) {
-                let mut untouched_parts = remove_part(unt_src, &intr);
+        for unt in untouched.iter() {
+            if let Some(intr) = intersect(unt, &src) {
+                let mut untouched_parts = remove_part(unt, &intr);
                 new_untouched.append(&mut untouched_parts);
             } else {
-                new_untouched.push(*unt_src);
+                new_untouched.push(*unt);
             }
         }
         untouched = new_untouched;
@@ -84,22 +85,15 @@ fn main() {
         .chunks_exact(2)
         .map(|x| [x[0], x[0] + x[1] - 1])
         .collect();
+
     for map in almanac {
         let mut new_seeds: Vec<[u64; 2]> = Vec::new();
-
         for seed in seeds.iter() {
             new_seeds.append(&mut dest(seed, &map));
         }
-
         seeds = new_seeds;
     }
 
-    let mut min = seeds[0][0];
-    for seed in seeds {
-        if seed[0] < min {
-            min = seed[0];
-        }
-    }
-
+    let min = seeds.iter().min_by(|x, y| x[0].cmp(&y[0])).unwrap()[0];
     println!("{min}");
 }
