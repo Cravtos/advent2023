@@ -17,7 +17,7 @@ fn card_rank(card: char) -> u8 {
         'A' => 14,
         'K' => 13,
         'Q' => 12,
-        'J' => 11,
+        'J' => 1,
         'T' => 10,
         n if n.is_ascii_digit() => n.to_digit(10).unwrap() as u8,
         _ => panic!("unknown card {card}"),
@@ -25,24 +25,32 @@ fn card_rank(card: char) -> u8 {
 }
 
 fn get_type(hand: &str) -> u8 {
+    let mut jokers = 0;
+
     let mut cards: HashMap<char, u8> = HashMap::new();
     for card in hand.chars() {
+        if card == 'J' {
+            jokers += 1;
+            continue;
+        }
         *cards.entry(card).or_insert(0) += 1
     }
 
     let counts = cards.values();
-    let max = *counts.clone().max().unwrap();
-    let min = *counts.clone().min().unwrap();
+    let max = *counts.clone().max().unwrap_or(&0);
+    let min = *counts.clone().min().unwrap_or(&0);
     let uniq = counts.count();
 
     match max {
-        5 => CardType::FiveOfAKind as u8,
-        4 => CardType::FourOfAKind as u8,
-        3 if min == 2 => CardType::FullHouse as u8,
-        3 if min == 1 => CardType::ThreeOfAKind as u8,
-        2 if uniq == 3 => CardType::TwoPairs as u8,
-        2 if uniq == 4 => CardType::OnePair as u8,
-        1 => CardType::HighCard as u8,
+        max if max + jokers == 5 => CardType::FiveOfAKind as u8,
+        max if max + jokers == 4 => CardType::FourOfAKind as u8,
+        max if max + jokers == 3 && uniq == 2 => CardType::FullHouse as u8,
+        max if max + jokers == 3 && min == 1 => CardType::ThreeOfAKind as u8,
+        2 if uniq == 3 && jokers == 0 => CardType::TwoPairs as u8,
+        max if max == 2 && jokers == 0 && uniq == 4 || max == 1 && jokers == 1 => {
+            CardType::OnePair as u8
+        }
+        1 if jokers == 0 => CardType::HighCard as u8,
         _ => panic!("couldn't get hand type"),
     }
 }
@@ -105,6 +113,6 @@ mod tests {
 
     #[test]
     fn test_cmp_hands() {
-        assert_eq!(cmp_hands("KK677", "KTJJT"), Ordering::Greater);
+        assert_eq!(cmp_hands("KK677", "KTJJT"), Ordering::Less);
     }
 }
