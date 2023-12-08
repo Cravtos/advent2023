@@ -1,5 +1,19 @@
 use std::collections::HashMap;
 
+fn gcd(mut n: usize, mut m: usize) -> usize {
+    while m != 0 {
+        if m < n {
+            std::mem::swap(&mut m, &mut n);
+        }
+        m %= n;
+    }
+    n
+}
+
+fn lcm(first: usize, second: usize) -> usize {
+    first * second / gcd(first, second)
+}
+
 fn main() {
     let mut input = include_str!("../input.txt").split("\n\n");
     let insns = input.next().unwrap();
@@ -22,12 +36,30 @@ fn main() {
         map.insert(node, directions);
     }
 
-    let mut count: usize = 0;
-    let mut poses = map.keys().filter(|node| node.chars().last().is_some_and(|c| c == 'A')).copied().collect::<Vec<&str>>();
-    for insn in insns.chars().cycle() {
-        if poses.iter().all(|pos| pos.chars().last().is_some_and(|c| c == 'Z')) {
+    let mut poses = map
+        .keys()
+        .filter(|node| node.chars().last().is_some_and(|c| c == 'A'))
+        .copied()
+        .collect::<Vec<&str>>();
+    let mut periods: Vec<Option<usize>> = vec![None; poses.len()];
+    for (count, insn) in insns.chars().cycle().enumerate() {
+        if periods.iter().all(Option::is_some) {
             break;
         }
+
+        poses
+            .iter()
+            .enumerate()
+            .filter(|(_, pos)| pos.chars().last().is_some_and(|c| c == 'Z'))
+            .for_each(|(i, _)| {
+                if let Some(period) = periods[i] {
+                    if period * 2 != count {
+                        panic!("inconsist period");
+                    }
+                } else {
+                    periods[i] = Some(count);
+                }
+            });
 
         poses.iter_mut().for_each(|pos| {
             let mut directions = *map.get(pos).unwrap();
@@ -37,9 +69,8 @@ fn main() {
                 _ => unreachable!(),
             }
         });
-
-        count += 1;
     }
 
-    println!("{count}");
+    let steps = periods.iter().map(|p| p.unwrap()).reduce(lcm).unwrap();
+    println!("{steps}");
 }
