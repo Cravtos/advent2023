@@ -52,11 +52,7 @@ fn main() {
             .enumerate()
             .filter(|(_, pos)| pos.chars().last().is_some_and(|c| c == 'Z'))
             .for_each(|(i, _)| {
-                if let Some(period) = periods[i] {
-                    if period * 2 != count {
-                        panic!("inconsist period");
-                    }
-                } else {
+                if periods[i].is_none() {
                     periods[i] = Some(count);
                 }
             });
