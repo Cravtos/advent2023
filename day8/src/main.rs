@@ -22,19 +22,21 @@ fn main() {
         map.insert(node, directions);
     }
 
-    let mut count = 0;
-    let mut pos = "AAA";
+    let mut count: usize = 0;
+    let mut poses = map.keys().filter(|node| node.chars().last().is_some_and(|c| c == 'A')).copied().collect::<Vec<&str>>();
     for insn in insns.chars().cycle() {
-        if pos == "ZZZ" {
+        if poses.iter().all(|pos| pos.chars().last().is_some_and(|c| c == 'Z')) {
             break;
         }
 
-        let directions = map.get(pos).unwrap();
-        match insn {
-            'L' => pos = directions.0,
-            'R' => pos = directions.1,
-            _ => unreachable!(),
-        }
+        poses.iter_mut().for_each(|pos| {
+            let mut directions = *map.get(pos).unwrap();
+            match insn {
+                'L' => *pos = &mut directions.0,
+                'R' => *pos = &mut directions.1,
+                _ => unreachable!(),
+            }
+        });
 
         count += 1;
     }
