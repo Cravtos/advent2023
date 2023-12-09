@@ -34,6 +34,7 @@ fn main() {
             let hist = line
                 .split(' ')
                 .map(|n| n.parse::<i64>().unwrap())
+                .rev()
                 .collect::<Vec<i64>>();
             extrapolate(hist)
         })
